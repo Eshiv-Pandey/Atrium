@@ -1,0 +1,114 @@
+# One command brings up the whole stack: `docker compose up`.
+#
+# Every value below has a working default, so a reviewer needs no .env file at
+# all. Copying .env.example to .env overrides them — Compose reads .env from the
+# project root automatically for ${VAR} substitution.
+#
+# The service order is enforced by conditions rather than by sleeping:
+#   postgres (healthy) -> migrate (exits 0) -> seed (exits 0) -> api (healthy) -> web
+# Nothing starts against a database that is not ready, and the api never comes
+# up against an unmigrated schema.
+
+name: atrium
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-atrium}
+      POSTGRES_USER: ${POSTGRES_USER:-atrium}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atrium_dev_pass}
+    ports:
+      # Exposed so you can psql into it while the stack runs. The app itself
+      # talks to it over the compose network, not this port.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # -U matters: pg_isready without it checks as the OS user, which is root
+      # here, and would report ready before the app's role exists.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atrium} -d ${POSTGRES_DB:-atrium}"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+
+  migrate:
+    image: migrate/migrate:v4.17.1
+    volumes:
+      - ./backend/migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=${DATABASE_URL:-postgres://atrium:atrium_dev_pass@postgres:5432/atrium?sslmode=disable}"
+      - "up"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  seed:
+    # Same image as the api; only the entrypoint differs. Seeding is idempotent,
+    # so re-running the stack does not accumulate duplicate rooms or bookings.
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    entrypoint: ["/seed"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://atrium:atrium_dev_pass@postgres:5432/atrium?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-dev_only_secret_at_least_32_bytes_long}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      PORT: 8080
+      DATABASE_URL: ${DATABASE_URL:-postgres://atrium:atrium_dev_pass@postgres:5432/atrium?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-dev_only_secret_at_least_32_bytes_long}
+      # One-click sign-in for reviewers. Off by default in the application;
+      # turned on here because this compose file is a development environment.
+      DEMO_LOGIN_ENABLED: ${DEMO_LOGIN_ENABLED:-true}
+      # Secure cookies require HTTPS, and this stack serves plain http on
+      # localhost. Production sets this true.
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      # The server binary probes itself: the image is distroless and contains
+      # no curl or wget to call.
+      test: ["CMD", "/server", "-healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      # Bind mount for hot reload, with an anonymous volume masking
+      # node_modules so the container's Linux-built dependencies are not
+      # replaced by the host's (which may be built for a different platform).
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      # Vite proxies /api to this address, so the browser only ever makes
+      # same-origin requests and the session cookie needs no cross-site
+      # exemption. The frontend never learns the API's origin.
+      VITE_API_PROXY_TARGET: http://api:8080
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
