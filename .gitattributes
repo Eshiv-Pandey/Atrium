@@ -1,0 +1,32 @@
+# Normalise line endings in the repository.
+#
+# Without this, a checkout on Windows commits CRLF back into files that were
+# authored with LF, so every cross-platform contributor sees whole files as
+# modified. Text is stored LF in git and checked out however the platform
+# prefers; the shell scripts and Dockerfile below are pinned to LF because they
+# are executed inside Linux containers, where CRLF makes a shebang fail with a
+# confusing "no such file or directory".
+* text=auto
+
+*.go            text eol=lf
+*.sql           text eol=lf
+*.sh            text eol=lf
+*.ts            text eol=lf
+*.tsx           text eol=lf
+*.js            text eol=lf
+*.json          text eol=lf
+*.css           text eol=lf
+*.html          text eol=lf
+*.md            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.conf          text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+.gitignore      text eol=lf
+.env.example    text eol=lf
+
+# Generated and lock files: keep them out of diffs, since reviewing them line by
+# line is never the point and a large lockfile diff hides the real change.
+package-lock.json   linguist-generated=true
+go.sum              linguist-generated=true

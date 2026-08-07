@@ -1,0 +1,39 @@
+# Environment and secrets
+.env
+.env.local
+*.pem
+
+# Go
+/backend/bin/
+*.test
+*.out
+coverage.html
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+
+# Generated route tree. Written by the Vite plugin during dev and by
+# `npm run routes` otherwise; `build` and `typecheck` generate it first, so a
+# fresh clone does not need it committed.
+/frontend/src/routeTree.gen.ts
+/frontend/.tanstack/
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Claude Code — local settings and agent-facing repo guidance. Not part of the
+# project, and CLAUDE.md is deliberately excluded from the published history.
+.claude/
+CLAUDE.md
+
+# Interview preparation notes. Deliberately not part of the submission.
+/notes/
+interview-prep.md
