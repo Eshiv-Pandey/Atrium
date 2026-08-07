@@ -1,0 +1,18 @@
+-- Intentionally empty.
+--
+-- Demo seed data lives in backend/cmd/seed rather than in a migration, for two
+-- reasons:
+--
+--   1. Passwords must be hashed with argon2id, which embeds a random salt per
+--      hash. A hash cannot be meaningfully hand-written into SQL, and pinning
+--      one would mean committing a hash whose parameters drift from whatever
+--      internal/auth actually uses.
+--
+--   2. Seed data is not schema. Migrations describe the shape of the database
+--      and must apply identically to every environment; demo rooms and demo
+--      users must not appear in production. Keeping them in a separate,
+--      explicitly-invoked binary makes that separation structural rather than
+--      a matter of remembering which migrations to skip.
+--
+-- Run `go run ./cmd/seed` (or `docker compose run --rm seed`) after migrating.
+-- This file is retained only so the migration sequence has no gap.

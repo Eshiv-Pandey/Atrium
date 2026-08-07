@@ -1,0 +1,1 @@
+-- Intentionally empty. See 000002_seed.up.sql.
