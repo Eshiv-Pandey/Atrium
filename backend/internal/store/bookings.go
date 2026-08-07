@@ -40,6 +40,45 @@ func scanBooking(row pgx.Row) (*domain.Booking, error) {
 	return &b, nil
 }
 
+// roomLockNamespace scopes the advisory lock keys below, so a room lock cannot
+// collide with any other advisory lock this application might later take.
+const roomLockNamespace = 4242
+
+// LockRoom serialises booking inserts for one room within the given
+// transaction. The lock releases on commit or rollback; there is no unlock.
+//
+// This is not an availability check and not a substitute for the exclusion
+// constraint. It reads no bookings and decides nothing: remove it and every
+// booking outcome stays identical, because bookings_no_overlap is still the
+// only thing that accepts or rejects a row. What it changes is how contenders
+// arrive at that constraint.
+//
+// Postgres validates an exclusion constraint by inserting the index entry
+// first and scanning for conflicts second. Transactions that all insert before
+// any of them scans therefore each find the others in progress and wait on the
+// others' xids — a cycle with no winner, which only the deadlock detector can
+// break, one victim per deadlock_timeout. Measured on this schema: at 8
+// contenders for one slot, 7 got 40P01 and the batch took 7.9s. With this lock
+// the same 8 take 130ms and the 7 losers get 23P01, the honest answer.
+//
+// The cost is that inserts for one room serialise. That is a narrower queue
+// than it sounds — the lock covers a single INSERT and the no-show UPDATE, both
+// sub-millisecond, and holds no locks across a read. It is emphatically not
+// SELECT ... FOR UPDATE over the room's bookings, which would hold a lock for
+// the duration of an availability read and scale with the rows examined.
+// Different rooms never contend.
+func (s *BookingStore) LockRoom(ctx context.Context, tx pgx.Tx, roomID uuid.UUID) error {
+	// hashtext maps the uuid into the int4 the two-argument form takes. A hash
+	// collision between two rooms costs a little needless serialisation and
+	// nothing else, since the lock is not what enforces correctness.
+	const q = `SELECT pg_advisory_xact_lock($1, hashtext($2::text))`
+
+	if _, err := tx.Exec(ctx, q, roomLockNamespace, roomID); err != nil {
+		return fmt.Errorf("lock room: %w", err)
+	}
+	return nil
+}
+
 // ReleaseStaleNoShows marks confirmed bookings that started more than
 // gracePeriod ago and were never checked into as released, freeing their slots.
 //

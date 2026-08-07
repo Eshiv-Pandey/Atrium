@@ -155,6 +155,80 @@ func TestCreate_ConcurrentSameSlot(t *testing.T) {
 	}
 }
 
+// TestCreate_ConcurrentDistinctRoomsAllSucceed guards the key the room lock is
+// taken on.
+//
+// Booking serialises per room by design, and the correctness of that does not
+// depend on the key: a lock on a single global constant would serialise every
+// booking in the building and still pass every other test in this file, only
+// slower. What it would break is this — simultaneous bookings of *different*
+// rooms, which must all succeed and must not contend at all.
+//
+// Deliberately no timing assertion: a wall-clock threshold is the flakiest kind
+// of test on shared CI hardware. What is asserted instead is that every one
+// succeeds, which a lock too coarse to be correct would still satisfy but which
+// a lock that deadlocks or errors across rooms would not.
+func TestCreate_ConcurrentDistinctRoomsAllSucceed(t *testing.T) {
+	svc, db := newBookingService(t)
+	ctx := context.Background()
+
+	const attempts = 8
+	start, end := slot(2)
+
+	rooms := make([]*domain.Room, attempts)
+	users := make([]*domain.User, attempts)
+	for i := range rooms {
+		rooms[i] = testutil.Room(t, db, 4)
+		users[i] = testutil.User(t, db, domain.RoleMember)
+	}
+
+	var (
+		release  = make(chan struct{})
+		ready    sync.WaitGroup
+		finished sync.WaitGroup
+
+		mu   sync.Mutex
+		errs []error
+	)
+
+	ready.Add(attempts)
+	finished.Add(attempts)
+
+	for i := 0; i < attempts; i++ {
+		go func(room *domain.Room, u *domain.User) {
+			defer finished.Done()
+			ready.Done()
+			<-release
+
+			_, _, err := svc.Create(ctx, service.CreateBookingInput{
+				RoomID: room.ID, UserID: u.ID, Start: start, End: end, AttendeeCount: 1,
+			})
+			if err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+			}
+		}(rooms[i], users[i])
+	}
+
+	ready.Wait()
+	close(release)
+	finished.Wait()
+
+	for _, err := range errs {
+		t.Errorf("booking a distinct room concurrently failed: %v", err)
+	}
+
+	var stored int
+	if err := db.Pool().QueryRow(ctx,
+		`SELECT count(*) FROM bookings WHERE status = 'confirmed'`).Scan(&stored); err != nil {
+		t.Fatalf("count stored bookings: %v", err)
+	}
+	if stored != attempts {
+		t.Errorf("database holds %d confirmed bookings, want %d", stored, attempts)
+	}
+}
+
 // TestCreate_BackToBackIsAllowed guards the '[)' bounds on the exclusion
 // constraint.
 //

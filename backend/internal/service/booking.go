@@ -37,10 +37,11 @@ type CreateBookingInput struct {
 
 // Create reserves a room.
 //
-// The sequence inside one transaction is: replay check, release stale no-shows
-// for this room, insert. There is deliberately no availability check — the
-// exclusion constraint is the authority, and a SELECT here would only add a
-// race window and a wasted round trip.
+// The sequence inside one transaction is: replay check, lock the room, release
+// stale no-shows for this room, insert. There is deliberately no availability
+// check — the exclusion constraint is the authority, and a SELECT here would
+// only add a race window and a wasted round trip. The room lock is ordering,
+// not checking; see store.LockRoom.
 //
 // The second return value reports whether this was an Idempotency-Key replay
 // rather than a fresh reservation, so the transport can answer 200 instead of
@@ -74,6 +75,17 @@ func (s *BookingService) Create(ctx context.Context, in CreateBookingInput) (*do
 			case !errors.Is(err, domain.ErrNotFound):
 				return err
 			}
+		}
+
+		// Queue behind any other booking attempt on this room. Taken after the
+		// replay check so a resubmitted form answers from the original booking
+		// without waiting on a busy room, and before the two writes below so
+		// they are the only pair in flight for this room.
+		//
+		// This orders arrivals; it does not decide them. See store.LockRoom for
+		// why the exclusion constraint needs that and remains the authority.
+		if err := s.bookings.LockRoom(ctx, tx, in.RoomID); err != nil {
+			return err
 		}
 
 		// Free any slot held by a booking nobody turned up for. Scoped to
