@@ -25,12 +25,20 @@ const MEMBER = {
 
 const ADMIN = { ...MEMBER, role: 'admin' as const }
 
+/**
+ * What a guard can throw: an ApiError carrying a status, or a router redirect.
+ * Both fields are optional because which one is present is the thing under
+ * test — a type that promised `status` would hide a redirect arriving where an
+ * error was expected.
+ */
+type Thrown = Error & { status?: number; isRedirect?: boolean }
+
 /** Captures whatever a guard threw, so the test can assert on its shape. */
-async function thrownBy(fn: () => Promise<unknown>): Promise<any> {
+async function thrownBy(fn: () => Promise<unknown>): Promise<Thrown> {
   try {
     await fn()
   } catch (err) {
-    return err
+    return err as Thrown
   }
   throw new Error('expected the guard to throw, but it returned')
 }
@@ -44,10 +52,12 @@ async function thrownBy(fn: () => Promise<unknown>): Promise<any> {
  * router's own `isRedirect` predicate gates that unwrap, so a plain Error can
  * never be mistaken for a redirect with missing fields.
  */
-async function redirectFrom(fn: () => Promise<unknown>): Promise<any> {
+async function redirectFrom(
+  fn: () => Promise<unknown>,
+): Promise<{ to?: string; search?: { redirect?: string } }> {
   const err = await thrownBy(fn)
   expect(isRedirect(err)).toBe(true)
-  return err.options
+  return (err as unknown as { options: { to?: string; search?: { redirect?: string } } }).options
 }
 
 function signedOut() {
