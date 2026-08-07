@@ -1,0 +1,11 @@
+# node_modules is installed inside the image; copying the host's would be both
+# slow and wrong, since host binaries may be built for a different platform.
+node_modules
+dist
+.vite
+
+Dockerfile
+.dockerignore
+.git
+.gitignore
+*.md
