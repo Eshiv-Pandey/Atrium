@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme — OKLCH tokens. The numbers are triplets: Lightness, Chroma, Hue. */
+    --primary: 0.55 0.18 262;
+    --primary-fg: 0.98 0.01 262;
+    --background: 0.98 0.01 0;
+    --foreground: 0.15 0.01 0;
+    --card: 1 0 0;
+    --card-fg: 0.15 0.01 0;
+    --muted: 0.95 0.01 0;
+    --muted-fg: 0.45 0.01 0;
+    --border: 0.90 0.01 0;
+    --input: 0.90 0.01 0;
+    --ring: 0.55 0.18 262;
+    --destructive: 0.55 0.22 25;
+    --destructive-fg: 0.98 0.01 25;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Dark theme — same hues, inverted lightness. */
+      --primary: 0.65 0.18 262;
+      --primary-fg: 0.98 0.01 262;
+      --background: 0.12 0.01 0;
+      --foreground: 0.95 0.01 0;
+      --card: 0.15 0.01 0;
+      --card-fg: 0.95 0.01 0;
+      --muted: 0.20 0.01 0;
+      --muted-fg: 0.60 0.01 0;
+      --border: 0.25 0.01 0;
+      --input: 0.25 0.01 0;
+      --ring: 0.65 0.18 262;
+      --destructive: 0.60 0.22 25;
+      --destructive-fg: 0.98 0.01 25;
+    }
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
