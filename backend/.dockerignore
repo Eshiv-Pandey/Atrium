@@ -1,0 +1,17 @@
+# Keep the build context small and the layer cache stable: anything listed
+# here cannot invalidate a COPY layer when it changes.
+
+Dockerfile
+.dockerignore
+.git
+.gitignore
+*.md
+
+# Test binaries and coverage output
+*.test
+*.out
+coverage.html
+
+# Migrations are mounted into the migrate service by compose, not built into
+# the api image — the api never runs them itself.
+migrations/
