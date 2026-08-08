@@ -306,3 +306,6 @@ I used AI tools as an assistant, not an autopilot. The design decisions, the tra
 - **Where I drove and it followed:** the concurrency model is the clearest example. I chose the exclusion constraint over application locking, then found the deadlock behavior under real contention, benchmarked it (the table in "Ordering, not deciding" is from those runs), and settled on the advisory lock as ordering rather than a `SELECT ... FOR UPDATE`. AI helped me write and measure the concurrency test; it didn't hand me the answer.
 - **Where I pushed back on it:** the first drafts reached for a background sweep to release no-shows and a check-then-insert in the service. Both are exactly the mistakes this design avoids, so I rejected them and moved the logic into the booking transaction.
 - **Reviewing its output:** I read everything it produced. The Zod boundary, the error envelope, and the information-hiding choices (404 over 403, 404 over 422) came out of that review, where the goal was a contract I could defend line by line.
+
+## Limitations 
+- Their might be edge cases i couldn't think of or some misbehaving things like a new user signing in for the first time may get a wrong error msg. I hope you understand the time limitations here were very tight...also missed an entire day cause of your mail landing in my spam folder :( .
