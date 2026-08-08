@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import { addDays, fromDateInputValue, isSameDay, startOfDay, toDateInputValue } from '@/lib/time'
 
@@ -15,6 +16,10 @@ export type DatePickerProps = {
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
+/** Popover width, w-[19rem] in px, used to keep it inside the viewport. */
+const POPOVER_WIDTH = 304
+const VIEWPORT_MARGIN = 8
+
 /**
  * DatePicker is a click-to-pick calendar, built rather than borrowed.
  *
@@ -28,6 +33,15 @@ const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
  * a month of buttons in a grid. The date maths reuses the DST-safe helpers in
  * lib/time rather than doing epoch arithmetic, for the same reason those helpers
  * exist.
+ *
+ * The popover renders through a portal into document.body, positioned `fixed` to
+ * the trigger. An in-flow `absolute` popover was painting behind the room cards
+ * below it: those cards are positioned (`relative`), so no z-index on the filter
+ * panel could reliably lift a descendant above them across the panel's own
+ * backdrop-blur stacking context. A portal sidesteps the whole question — the
+ * popover is no longer a sibling of anything on the page, so nothing can paint
+ * over it. The cost is that outside-click detection can no longer rely on the
+ * popover living inside the trigger's container, so it is tracked by its own ref.
  */
 export function DatePicker({ label, value, min, onChange, id: providedId, disabled }: DatePickerProps) {
   const generatedId = useId()
@@ -38,9 +52,25 @@ export function DatePicker({ label, value, min, onChange, id: providedId, disabl
 
   const [open, setOpen] = useState(false)
   const [viewMonth, setViewMonth] = useState(() => startOfMonth(selected ?? new Date()))
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  // Anchor the fixed popover just under the trigger, clamped into the viewport
+  // so a trigger near the right edge does not push it off-screen. Reads layout
+  // on demand rather than tracking it in state.
+  const positionPopover = useCallback(() => {
+    const trigger = triggerRef.current
+    if (!trigger) return
+    const rect = trigger.getBoundingClientRect()
+    const left = Math.min(
+      Math.max(VIEWPORT_MARGIN, rect.left),
+      Math.max(VIEWPORT_MARGIN, window.innerWidth - POPOVER_WIDTH - VIEWPORT_MARGIN),
+    )
+    setCoords({ top: rect.bottom + VIEWPORT_MARGIN, left })
+  }, [])
 
   // Reopen on the month of the current selection rather than wherever the user
   // last browsed, so the highlighted day is always in view. Keyed off the string
@@ -49,13 +79,30 @@ export function DatePicker({ label, value, min, onChange, id: providedId, disabl
     if (open) setViewMonth(startOfMonth(value ? fromDateInputValue(value) : new Date()))
   }, [open, value])
 
-  // Close on an outside click or Escape. A calendar that stays open after you
-  // click away from it, or that Escape does not dismiss, feels broken in a way a
-  // native control never does.
+  // Keep the popover glued to the trigger as the page scrolls or resizes. A
+  // fixed element does not move with the document, so without this it would
+  // drift away from its trigger on the first scroll.
+  useEffect(() => {
+    if (!open) return
+    const reflow = () => positionPopover()
+    window.addEventListener('resize', reflow)
+    window.addEventListener('scroll', reflow, true)
+    return () => {
+      window.removeEventListener('resize', reflow)
+      window.removeEventListener('scroll', reflow, true)
+    }
+  }, [open, positionPopover])
+
+  // Close on an outside click or Escape. With the popover portaled out of the
+  // trigger's container, an inside-click check has to consult both refs, or
+  // every click on a day would read as "outside" and close before it registers.
   useEffect(() => {
     if (!open) return
     const onPointerDown = (e: PointerEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (containerRef.current?.contains(target)) return
+      if (popoverRef.current?.contains(target)) return
+      setOpen(false)
     }
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -70,6 +117,11 @@ export function DatePicker({ label, value, min, onChange, id: providedId, disabl
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [open])
+
+  const toggle = () => {
+    if (!open) positionPopover()
+    setOpen((v) => !v)
+  }
 
   const pick = (day: Date) => {
     onChange(toDateInputValue(day))
@@ -97,7 +149,7 @@ export function DatePicker({ label, value, min, onChange, id: providedId, disabl
         disabled={disabled}
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         className={cn(
           'mt-2 flex w-full items-center justify-between rounded-lg border border-input bg-background/60 px-3.5 py-2.5 text-sm',
           'transition-colors focus-visible:outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring/60',
@@ -109,93 +161,98 @@ export function DatePicker({ label, value, min, onChange, id: providedId, disabl
         <CalendarIcon className="h-4 w-4 shrink-0 text-muted-fg" />
       </button>
 
-      {open ? (
-        <div
-          role="dialog"
-          aria-label={`Choose ${label.toLowerCase()}`}
-          className={cn(
-            'absolute left-0 top-full z-50 mt-2 w-[19rem] rounded-xl border border-border/70 bg-card p-3 text-card-fg',
-            'shadow-[0_24px_60px_-24px_oklch(0_0_0/0.9)] backdrop-blur-sm',
-          )}
-        >
-          <div className="mb-2 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setViewMonth(addMonths(viewMonth, -1))}
-              disabled={atMinMonth}
-              aria-label="Previous month"
+      {open && coords
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              role="dialog"
+              aria-label={`Choose ${label.toLowerCase()}`}
+              style={{ position: 'fixed', top: coords.top, left: coords.left }}
               className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-lg text-muted-fg transition-colors',
-                'hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                'disabled:pointer-events-none disabled:opacity-30',
+                'z-[100] w-[19rem] rounded-xl border border-border/70 bg-card p-3 text-card-fg',
+                'shadow-[0_24px_60px_-24px_oklch(0_0_0/0.9)]',
               )}
             >
-              ←
-            </button>
-            <span
-              aria-live="polite"
-              className="font-display text-sm font-bold uppercase tracking-[-0.01em]"
-              data-numeric
-            >
-              {formatMonth(viewMonth)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setViewMonth(addMonths(viewMonth, 1))}
-              aria-label="Next month"
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-lg text-muted-fg transition-colors',
-                'hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              )}
-            >
-              →
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {WEEKDAYS.map((w) => (
-              <div
-                key={w}
-                aria-hidden="true"
-                className="flex h-8 items-center justify-center text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-muted-fg/70"
-              >
-                {w}
-              </div>
-            ))}
-
-            {days.map((day) => {
-              const inMonth = day.getMonth() === viewMonth.getMonth()
-              const isDisabled = minDay != null && startOfDay(day).getTime() < minDay.getTime()
-              const isSelected = selected != null && isSameDay(day, selected)
-              const isToday = isSameDay(day, new Date())
-
-              return (
+              <div className="mb-2 flex items-center justify-between">
                 <button
-                  key={toDateInputValue(day)}
                   type="button"
-                  disabled={isDisabled}
-                  aria-pressed={isSelected}
-                  aria-label={formatFullDate(day)}
-                  onClick={() => pick(day)}
+                  onClick={() => setViewMonth(addMonths(viewMonth, -1))}
+                  disabled={atMinMonth}
+                  aria-label="Previous month"
                   className={cn(
-                    'flex h-9 items-center justify-center rounded-lg text-sm tabular-nums transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'flex h-8 w-8 items-center justify-center rounded-lg text-muted-fg transition-colors',
+                    'hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     'disabled:pointer-events-none disabled:opacity-30',
-                    !inMonth && 'text-muted-fg/50',
-                    isSelected
-                      ? 'bg-primary font-semibold text-primary-fg'
-                      : 'hover:bg-muted hover:text-foreground',
-                    !isSelected && isToday && 'ring-1 ring-inset ring-primary/50',
-                    !isSelected && inMonth && !isDisabled && 'text-foreground',
                   )}
                 >
-                  {day.getDate()}
+                  ←
                 </button>
-              )
-            })}
-          </div>
-        </div>
-      ) : null}
+                <span
+                  aria-live="polite"
+                  className="font-display text-sm font-bold uppercase tracking-[-0.01em]"
+                  data-numeric
+                >
+                  {formatMonth(viewMonth)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setViewMonth(addMonths(viewMonth, 1))}
+                  aria-label="Next month"
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-lg text-muted-fg transition-colors',
+                    'hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  )}
+                >
+                  →
+                </button>
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {WEEKDAYS.map((w) => (
+                  <div
+                    key={w}
+                    aria-hidden="true"
+                    className="flex h-8 items-center justify-center text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-muted-fg/70"
+                  >
+                    {w}
+                  </div>
+                ))}
+
+                {days.map((day) => {
+                  const inMonth = day.getMonth() === viewMonth.getMonth()
+                  const isDisabled = minDay != null && startOfDay(day).getTime() < minDay.getTime()
+                  const isSelected = selected != null && isSameDay(day, selected)
+                  const isToday = isSameDay(day, new Date())
+
+                  return (
+                    <button
+                      key={toDateInputValue(day)}
+                      type="button"
+                      disabled={isDisabled}
+                      aria-pressed={isSelected}
+                      aria-label={formatFullDate(day)}
+                      onClick={() => pick(day)}
+                      className={cn(
+                        'flex h-9 items-center justify-center rounded-lg text-sm tabular-nums transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        'disabled:pointer-events-none disabled:opacity-30',
+                        !inMonth && 'text-muted-fg/50',
+                        isSelected
+                          ? 'bg-primary font-semibold text-primary-fg'
+                          : 'hover:bg-muted hover:text-foreground',
+                        !isSelected && isToday && 'ring-1 ring-inset ring-primary/50',
+                        !isSelected && inMonth && !isDisabled && 'text-foreground',
+                      )}
+                    >
+                      {day.getDate()}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }

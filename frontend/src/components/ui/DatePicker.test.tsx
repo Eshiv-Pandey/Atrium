@@ -12,7 +12,8 @@ describe('DatePicker', () => {
     render(<DatePicker label="Date" value={undefined} onChange={() => {}} />)
 
     // Positive fact so the negative below cannot pass against an empty render.
-    expect(screen.getByRole('button', { name: /pick a date/i })).toBeInTheDocument()
+    // The <label> names the trigger button ("Date"); the placeholder is its text.
+    expect(screen.getByRole('button', { name: /date/i })).toHaveTextContent(/pick a date/i)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
