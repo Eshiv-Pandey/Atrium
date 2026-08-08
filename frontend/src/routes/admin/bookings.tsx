@@ -26,6 +26,11 @@ export const Route = createFileRoute('/admin/bookings')({
   component: AdminBookings,
 })
 
+const filterLabel =
+  'block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-fg'
+const filterSelect =
+  'block w-full rounded-lg border border-input bg-background/60 px-3.5 py-2.5 text-sm transition-colors focus-visible:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60'
+
 function AdminBookings() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
@@ -50,18 +55,29 @@ function AdminBookings() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-5">
-        <h2 className="sr-only">Filter bookings</h2>
+      <h2 className="font-display text-xl font-bold uppercase tracking-[-0.02em]">
+        Bookings
+      </h2>
+
+      <section aria-labelledby="booking-filters" className="panel p-5 sm:p-6">
+        <h2 id="booking-filters" className="sr-only">
+          Filter bookings
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-1.5">
-            <label htmlFor="filter-room" className="block text-sm font-medium">
+          {/*
+            Hand-rolled rather than routed through Field, which renders an
+            input. The label and control classes are copied from it deliberately
+            so the two sit on the same baseline in the same grid row.
+          */}
+          <div className="space-y-2">
+            <label htmlFor="filter-room" className={filterLabel}>
               Room
             </label>
             <select
               id="filter-room"
               value={search.roomId ?? ''}
               onChange={(e) => setSearch({ roomId: e.target.value || undefined })}
-              className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={filterSelect}
             >
               <option value="">All rooms</option>
               {rooms.data?.map((room) => (
@@ -72,8 +88,8 @@ function AdminBookings() {
             </select>
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="filter-status" className="block text-sm font-medium">
+          <div className="space-y-2">
+            <label htmlFor="filter-status" className={filterLabel}>
               Status
             </label>
             <select
@@ -84,7 +100,7 @@ function AdminBookings() {
                   status: (e.target.value || undefined) as typeof search.status,
                 })
               }
-              className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={filterSelect}
             >
               <option value="">Any status</option>
               <option value="confirmed">Confirmed</option>
@@ -108,7 +124,7 @@ function AdminBookings() {
         </div>
 
         {hasFilters ? (
-          <div className="mt-4">
+          <div className="mt-6">
             <Button
               variant="ghost"
               size="sm"
@@ -118,7 +134,7 @@ function AdminBookings() {
             </Button>
           </div>
         ) : null}
-      </Card>
+      </section>
 
       <div aria-live="polite" aria-busy={bookings.isLoading}>
         {bookings.isLoading ? (
@@ -145,18 +161,21 @@ function AdminBookings() {
                 <caption className="sr-only">
                   All bookings matching the current filters.
                 </caption>
-                <thead className="border-b border-border bg-muted/50 text-left">
+                <thead className="border-b border-border/70 bg-muted/40 text-left [&_th]:text-[0.66rem] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.14em] [&_th]:text-muted-fg">
                   <tr>
-                    <th scope="col" className="px-4 py-3 font-medium">Room</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Booked by</th>
-                    <th scope="col" className="px-4 py-3 font-medium">When</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Seats</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                    <th scope="col" className="px-4 py-3">Room</th>
+                    <th scope="col" className="px-4 py-3">Booked by</th>
+                    <th scope="col" className="px-4 py-3">When</th>
+                    <th scope="col" className="px-4 py-3">Seats</th>
+                    <th scope="col" className="px-4 py-3">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((b) => (
-                    <tr key={b.id} className="border-b border-border last:border-0">
+                    <tr
+                      key={b.id}
+                      className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/30"
+                    >
                       <th scope="row" className="px-4 py-3 text-left font-medium">
                         {b.room?.name ?? '—'}
                       </th>
@@ -172,13 +191,15 @@ function AdminBookings() {
                           '—'
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" data-numeric>
                         <span className="block">{formatRange(b.startTime, b.endTime)}</span>
                         <span className="block text-xs text-muted-fg">
                           {formatDuration(b.startTime, b.endTime)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 tabular-nums">{b.attendeeCount}</td>
+                      <td className="px-4 py-3 tabular-nums" data-numeric>
+                        {b.attendeeCount}
+                      </td>
                       <td className="px-4 py-3">
                         <StatusBadge booking={b} />
                       </td>

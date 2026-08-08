@@ -23,13 +23,22 @@ export function RoomCard({
   return (
     <Card
       className={cn(
-        'group relative transition-colors',
+        'group relative overflow-hidden transition-colors',
         unavailable ? 'opacity-60' : 'hover:border-primary/50',
       )}
     >
-      <div className="p-5">
+      {/* Ember bleed in the corner, revealed on hover. Cheap to animate — it
+          is one opacity change on a layer that is already composited — and it
+          gives the grid the heat of the reference art without tinting the
+          resting state of twenty cards at once. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/20 opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-100"
+      />
+
+      <div className="relative p-5">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-medium">
+          <h3 className="font-display text-lg font-bold uppercase tracking-[-0.01em]">
             {/*
               The link covers the whole card via an ::after overlay rather than
               wrapping it. Wrapping would put the amenity list inside the
@@ -51,7 +60,7 @@ export function RoomCard({
           ) : null}
         </div>
 
-        <p className="mt-1 text-sm text-muted-fg">
+        <p className="mt-1.5 text-sm text-muted-fg" data-numeric>
           Seats {room.capacity}
         </p>
 

@@ -116,7 +116,10 @@ export function BookingDialog({
         />
 
         {create.isError ? (
-          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p
+            role="alert"
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm leading-relaxed text-destructive"
+          >
             {conflict
               ? 'Someone booked this slot while you were choosing. The timeline behind this dialog has been refreshed — pick another time.'
               : errorMessage(create.error)}

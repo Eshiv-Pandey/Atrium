@@ -12,8 +12,9 @@ import {
   toTimeInputValue,
   toWire,
 } from '@/lib/time'
-import { RoomCard, RoomCardSkeleton, formatAmenity } from '@/components/RoomCard'
-import { EmptyState, ErrorState } from '@/components/ui/Card'
+import { RoomCard, RoomCardSkeleton } from '@/components/RoomCard'
+import { AmenityToggles } from '@/components/AmenityToggles'
+import { EmptyState, ErrorState, SectionHeading } from '@/components/ui/Card'
 import { Field } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 
@@ -44,8 +45,6 @@ export const Route = createFileRoute('/rooms/')({
   beforeLoad: requireAuth,
   component: BrowseRooms,
 })
-
-const AMENITIES = ['quiet', 'whiteboard', 'tv', 'videoconf', 'casual']
 
 function BrowseRooms() {
   const search = Route.useSearch()
@@ -79,18 +78,19 @@ function BrowseRooms() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Rooms</h1>
-        <p className="mt-1 text-sm text-muted-fg">
-          {window
+      <SectionHeading
+        eyebrow="Browse"
+        title="Rooms"
+        description={
+          window
             ? 'Showing whether each room is free in your chosen window.'
-            : 'Pick a time to see what is actually free.'}
-        </p>
-      </header>
+            : 'Pick a time to see what is actually free.'
+        }
+      />
 
       <section
         aria-labelledby="filters-heading"
-        className="rounded-lg border border-border bg-card p-5"
+        className="panel p-5 sm:p-6"
       >
         <h2 id="filters-heading" className="sr-only">
           Filter rooms
@@ -140,35 +140,14 @@ function BrowseRooms() {
           />
         </div>
 
-        <fieldset className="mt-4">
-          <legend className="text-sm font-medium">Amenities</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {AMENITIES.map((amenity) => {
-              const active = search.amenities?.includes(amenity) ?? false
-              return (
-                <button
-                  key={amenity}
-                  type="button"
-                  // aria-pressed rather than a styled checkbox: these are
-                  // toggle buttons, and the pressed state is what a screen
-                  // reader needs to announce.
-                  aria-pressed={active}
-                  onClick={() => toggleAmenity(amenity)}
-                  className={
-                    active
-                      ? 'rounded-full border border-primary bg-primary/10 px-3 py-1 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                      : 'rounded-full border border-border px-3 py-1 text-sm text-muted-fg hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                  }
-                >
-                  {formatAmenity(amenity)}
-                </button>
-              )
-            })}
-          </div>
-        </fieldset>
+        <AmenityToggles
+          className="mt-6"
+          selected={search.amenities ?? []}
+          onToggle={toggleAmenity}
+        />
 
         {hasFilters ? (
-          <div className="mt-4">
+          <div className="mt-6">
             <Button
               variant="ghost"
               size="sm"

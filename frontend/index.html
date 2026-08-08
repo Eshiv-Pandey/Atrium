@@ -2,9 +2,38 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="icon" type="image/png" href="/images/atrium-logo.png" />
+    <link rel="apple-touch-icon" href="/images/atrium-logo.png" />
+
+    <!--
+      Fonts. preconnect to both hosts because the CSS and the font files it
+      references come from different origins, and the browser cannot discover
+      the second until it has parsed the first.
+
+      display=swap so text paints immediately in the fallback rather than
+      holding an invisible headline while the network decides. The stacks in
+      tailwind.config.js end in real grotesques, so an offline container
+      degrades to a comparable face instead of a serif.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+
     <title>Atrium — Meeting Room Booking</title>
+    <meta
+      name="description"
+      content="Book meeting rooms in a co-working space. One booking per slot, guaranteed. No-shows release themselves."
+    />
+
+    <!-- Paints the browser chrome to match the page instead of leaving a white
+         bar above a near-black document. -->
+    <meta name="theme-color" content="#1c1512" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f7f0e4" media="(prefers-color-scheme: light)" />
   </head>
   <body>
     <div id="root"></div>

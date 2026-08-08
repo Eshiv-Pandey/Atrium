@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { ApiError, errorMessage } from '@/api/client'
 import { useCreateRoom, useDeleteRoom, useRooms, useUpdateRoom } from '@/api/hooks'
 import type { Room } from '@/api/schemas'
+import { AmenityToggles } from '@/components/AmenityToggles'
 import { formatAmenity } from '@/components/RoomCard'
 import { notify } from '@/components/Toast'
 import { Button } from '@/components/ui/Button'
@@ -13,8 +14,6 @@ import { Field } from '@/components/ui/Field'
 export const Route = createFileRoute('/admin/rooms')({
   component: AdminRooms,
 })
-
-const AMENITIES = ['quiet', 'whiteboard', 'tv', 'videoconf', 'casual']
 
 function AdminRooms() {
   const rooms = useRooms()
@@ -28,8 +27,10 @@ function AdminRooms() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="font-medium">Rooms</h2>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h2 className="font-display text-xl font-bold uppercase tracking-[-0.02em]">
+          Rooms
+        </h2>
         <Button onClick={() => setTarget({ room: null })}>Add room</Button>
       </div>
 
@@ -63,12 +64,12 @@ function AdminRooms() {
               <caption className="sr-only">
                 All bookable rooms, with capacity and amenities.
               </caption>
-              <thead className="border-b border-border bg-muted/50 text-left">
+              <thead className="border-b border-border/70 bg-muted/40 text-left [&_th]:text-[0.66rem] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.14em] [&_th]:text-muted-fg">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-medium">Name</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Seats</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Amenities</th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">
+                  <th scope="col" className="px-4 py-3">Name</th>
+                  <th scope="col" className="px-4 py-3">Seats</th>
+                  <th scope="col" className="px-4 py-3">Amenities</th>
+                  <th scope="col" className="px-4 py-3 text-right">
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>
@@ -110,11 +111,13 @@ function RoomRow({ room, onEdit }: { room: Room; onEdit: () => void }) {
   const remove = useDeleteRoom()
 
   return (
-    <tr className="border-b border-border last:border-0">
+    <tr className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/30">
       <th scope="row" className="px-4 py-3 text-left font-medium">
         {room.name}
       </th>
-      <td className="px-4 py-3 tabular-nums">{room.capacity}</td>
+      <td className="px-4 py-3 tabular-nums" data-numeric>
+        {room.capacity}
+      </td>
       <td className="px-4 py-3">
         {room.amenities.length > 0 ? (
           <ul className="flex flex-wrap gap-1">
@@ -242,35 +245,16 @@ function RoomDialogForm({
           onChange={(e) => setCapacity(Number(e.target.value) || 0)}
         />
 
-        <fieldset>
-          <legend className="text-sm font-medium">Amenities</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {AMENITIES.map((amenity) => {
-              const active = amenities.includes(amenity)
-              return (
-                <button
-                  key={amenity}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() =>
-                    setAmenities((prev) =>
-                      prev.includes(amenity)
-                        ? prev.filter((a) => a !== amenity)
-                        : [...prev, amenity],
-                    )
-                  }
-                  className={
-                    active
-                      ? 'rounded-full border border-primary bg-primary/10 px-3 py-1 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                      : 'rounded-full border border-border px-3 py-1 text-sm text-muted-fg hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                  }
-                >
-                  {formatAmenity(amenity)}
-                </button>
-              )
-            })}
-          </div>
-        </fieldset>
+        <AmenityToggles
+          selected={amenities}
+          onToggle={(amenity) =>
+            setAmenities((prev) =>
+              prev.includes(amenity)
+                ? prev.filter((a) => a !== amenity)
+                : [...prev, amenity],
+            )
+          }
+        />
       </div>
     </Dialog>
   )

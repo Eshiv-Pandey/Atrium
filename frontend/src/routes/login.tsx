@@ -42,7 +42,16 @@ export const Route = createFileRoute('/login')({
 function LoginPage() {
   const { redirect: redirectTo } = Route.useSearch()
   return (
-    <div className="py-12">
+    <div className="relative isolate py-10 sm:py-16">
+      {/* Same layered-type device as the landing hero, scaled down. Decorative
+          only, so it is hidden from assistive tech and cannot swallow a click
+          on the form in front of it. */}
+      <span
+        aria-hidden="true"
+        className="ghost-type fade-b pointer-events-none absolute -top-2 left-1/2 -z-10 -translate-x-1/2 select-none text-[6rem] sm:text-[9rem]"
+      >
+        Atrium
+      </span>
       <LoginForm redirectTo={redirectTo} />
     </div>
   )

@@ -3,39 +3,71 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+    Palette. OKLCH triplets: Lightness, Chroma, Hue.
+    Three families do all the work — warm ink (hue ~45), ember (hue ~42), and
+    cream (hue ~85). Keeping every neutral on the same warm hue as the ember is
+    what stops the dark surfaces reading as generic slate: the greys are tinted
+    toward the accent rather than sitting beside it.
+  */
   :root {
-    /* Light theme — OKLCH tokens. The numbers are triplets: Lightness, Chroma, Hue. */
-    --primary: 0.55 0.18 262;
-    --primary-fg: 0.98 0.01 262;
-    --background: 0.98 0.01 0;
-    --foreground: 0.15 0.01 0;
-    --card: 1 0 0;
-    --card-fg: 0.15 0.01 0;
-    --muted: 0.95 0.01 0;
-    --muted-fg: 0.45 0.01 0;
-    --border: 0.90 0.01 0;
-    --input: 0.90 0.01 0;
-    --ring: 0.55 0.18 262;
-    --destructive: 0.55 0.22 25;
-    --destructive-fg: 0.98 0.01 25;
+    --background: 0.13 0.018 45;
+    --foreground: 0.93 0.025 82;
+
+    --card: 0.17 0.022 45;
+    --card-fg: 0.93 0.025 82;
+
+    --muted: 0.24 0.025 45;
+    --muted-fg: 0.70 0.035 70;
+
+    --border: 0.30 0.03 48;
+    --input: 0.30 0.03 48;
+
+    --primary: 0.66 0.20 42;
+    --primary-fg: 0.14 0.02 45;
+    --ring: 0.70 0.19 45;
+
+    /* Cream. The second voice in the ref: used for display type and the
+       inverted surfaces that break up a long run of dark panels. */
+    --accent: 0.92 0.045 85;
+    --accent-fg: 0.15 0.02 45;
+
+    --destructive: 0.60 0.21 25;
+    --destructive-fg: 0.97 0.02 25;
+    --success: 0.72 0.16 145;
+    --warning: 0.80 0.16 75;
   }
 
-  @media (prefers-color-scheme: dark) {
+  /*
+    Light is a genuine second theme, not an inversion: cream paper, warm ink,
+    the same ember. Hues are held constant across both so a component tuned in
+    one does not drift in the other.
+  */
+  @media (prefers-color-scheme: light) {
     :root {
-      /* Dark theme — same hues, inverted lightness. */
-      --primary: 0.65 0.18 262;
-      --primary-fg: 0.98 0.01 262;
-      --background: 0.12 0.01 0;
-      --foreground: 0.95 0.01 0;
-      --card: 0.15 0.01 0;
-      --card-fg: 0.95 0.01 0;
-      --muted: 0.20 0.01 0;
-      --muted-fg: 0.60 0.01 0;
-      --border: 0.25 0.01 0;
-      --input: 0.25 0.01 0;
-      --ring: 0.65 0.18 262;
-      --destructive: 0.60 0.22 25;
-      --destructive-fg: 0.98 0.01 25;
+      --background: 0.96 0.02 85;
+      --foreground: 0.17 0.02 45;
+
+      --card: 0.99 0.012 85;
+      --card-fg: 0.17 0.02 45;
+
+      --muted: 0.92 0.025 80;
+      --muted-fg: 0.46 0.03 55;
+
+      --border: 0.86 0.03 75;
+      --input: 0.86 0.03 75;
+
+      --primary: 0.58 0.21 40;
+      --primary-fg: 0.98 0.015 85;
+      --ring: 0.58 0.21 40;
+
+      --accent: 0.22 0.02 45;
+      --accent-fg: 0.95 0.02 85;
+
+      --destructive: 0.53 0.22 25;
+      --destructive-fg: 0.98 0.015 25;
+      --success: 0.55 0.15 150;
+      --warning: 0.62 0.15 70;
     }
   }
 
@@ -44,7 +76,149 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  }
+
+  /* Tabular figures everywhere a time or count is compared down a column.
+     Proportional digits make 11:00 and 14:45 different widths, which makes a
+     schedule look ragged and a utilization table hard to scan. */
+  time,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: oklch(var(--primary) / 0.85);
+    color: oklch(var(--primary-fg));
+  }
+
+  /* The refs are built on heavy texture and motion. Both are decoration, so
+     both come off entirely when the user has asked for less. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+    Film grain. A single tiling feTurbulence, fixed to the viewport so it does
+    not scroll with content — grain that moves reads as a texture painted onto
+    the page rather than as the surface the page is printed on.
+
+    soft-light rather than overlay: overlay crushes the deep end of the ember
+    gradient to black, which is exactly the range the reference art holds its
+    detail in.
+  */
+  .grain::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.32;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  @media (prefers-color-scheme: light) {
+    .grain::after {
+      opacity: 0.18;
+    }
+  }
+
+  /* The ember wash from ref2: heat pooling at one edge and falling off into
+     the warm black. Three offset radials rather than a linear gradient, so the
+     falloff is uneven the way the reference is. */
+  .ember-wash {
+    background-image:
+      radial-gradient(80rem 40rem at 50% -10%, oklch(var(--primary) / 0.30), transparent 65%),
+      radial-gradient(50rem 30rem at 15% 10%, oklch(0.72 0.19 55 / 0.18), transparent 60%),
+      radial-gradient(60rem 34rem at 88% 4%, oklch(0.60 0.20 28 / 0.20), transparent 62%);
+  }
+
+  .ember-wash-b {
+    background-image:
+      radial-gradient(60rem 36rem at 12% 50%, oklch(var(--primary) / 0.16), transparent 62%),
+      radial-gradient(46rem 28rem at 92% 68%, oklch(0.68 0.18 60 / 0.14), transparent 60%);
+  }
+
+  /*
+    Oversized ghost type — the layered lettering behind the headline in ref1.
+    aria-hidden at every call site: it is texture that happens to be made of
+    letters, and a screen reader announcing it would read the headline twice.
+  */
+  .ghost-type {
+    font-family: theme('fontFamily.display');
+    font-weight: 900;
+    letter-spacing: -0.06em;
+    line-height: 0.78;
+    text-transform: uppercase;
+    color: transparent;
+    -webkit-text-stroke: 1px oklch(var(--foreground) / 0.13);
+    user-select: none;
+  }
+
+  .ghost-type-solid {
+    color: oklch(var(--foreground) / 0.055);
+    -webkit-text-stroke: 0;
+  }
+
+  /* Tracked-out micro label. The "IT'S ALOT SERIES" / "HERO V3 GRADIENTS"
+     line — small, wide, quiet, and always paired with something loud. */
+  .micro {
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-fg;
+  }
+
+  /* The boxed outline mark from ref1's logo lockup. */
+  .rule-box {
+    @apply rounded-md border border-foreground/25 px-2 py-1;
+  }
+
+  .hairline {
+    @apply border-t border-border/60;
+  }
+
+  /* Panel is the workhorse surface: a card that still reads as layered against
+     a textured background, which a flat fill does not. */
+  .panel {
+    @apply rounded-xl border border-border/70 bg-card/70 backdrop-blur-sm;
+  }
+
+  .panel-raised {
+    @apply panel shadow-[0_1px_0_0_oklch(var(--foreground)/0.06)_inset,0_18px_50px_-24px_oklch(0_0_0/0.9)];
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: theme('fontFamily.display');
+  }
+
+  /* Display headline defaults: heavy, tight, and optically de-tracked. Large
+     type needs negative tracking that body copy does not — the same letter
+     spacing that reads as open at 16px reads as loose at 72px. */
+  .display-xl {
+    @apply font-display font-black uppercase leading-[0.86] tracking-[-0.045em];
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Masks the bottom of a decorative layer into the page rather than letting
+     it end on a hard edge. */
+  .fade-b {
+    mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
   }
 }

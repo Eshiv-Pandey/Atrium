@@ -88,9 +88,9 @@ export function resetToasts() {
 }
 
 const toneStyles: Record<ToastTone, string> = {
-  success: 'border-primary/40 bg-card',
-  error: 'border-destructive/50 bg-card',
-  info: 'border-border bg-card',
+  success: 'border-success/40 bg-card/95',
+  error: 'border-destructive/50 bg-card/95',
+  info: 'border-border/70 bg-card/95',
 }
 
 const toneLabel: Record<ToastTone, string> = {
@@ -117,7 +117,8 @@ export function ToastViewport() {
         <div
           key={t.id}
           className={cn(
-            'pointer-events-auto w-full max-w-sm rounded-lg border p-4 shadow-lg',
+            'pointer-events-auto w-full max-w-sm rounded-xl border p-4 backdrop-blur-xl',
+            'shadow-[0_24px_60px_-24px_oklch(0_0_0/0.9)]',
             toneStyles[t.tone],
           )}
         >
@@ -125,7 +126,7 @@ export function ToastViewport() {
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  'text-sm font-medium',
+                  'text-sm font-semibold',
                   t.tone === 'error' ? 'text-destructive' : 'text-card-fg',
                 )}
               >

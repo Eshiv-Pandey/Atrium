@@ -4,7 +4,14 @@ import { useCancelBooking, useCheckIn, useMyBookings } from '@/api/hooks'
 import type { Booking } from '@/api/schemas'
 import { notify } from '@/components/Toast'
 import { Button } from '@/components/ui/Button'
-import { Badge, Card, EmptyState, ErrorState, Skeleton } from '@/components/ui/Card'
+import {
+  Badge,
+  Card,
+  EmptyState,
+  ErrorState,
+  SectionHeading,
+  Skeleton,
+} from '@/components/ui/Card'
 import { requireAuth } from '@/lib/guards'
 import { formatDuration, formatRange, fromWire } from '@/lib/time'
 
@@ -30,13 +37,11 @@ function MyBookings() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">My bookings</h1>
-        <p className="mt-1 text-sm text-muted-fg">
-          Check in from five minutes before your booking starts. Fifteen minutes
-          after, an unclaimed room is released for someone else.
-        </p>
-      </header>
+      <SectionHeading
+        eyebrow="Your schedule"
+        title="My bookings"
+        description="Check in from five minutes before your booking starts. Fifteen minutes after, an unclaimed room is released for someone else."
+      />
 
       <div aria-live="polite" aria-busy={bookings.isLoading}>
         {bookings.isLoading ? (
@@ -61,7 +66,7 @@ function MyBookings() {
               // is invalid HTML that breaks middle-click and "open in new tab".
               <Link
                 to="/rooms"
-                className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-fg transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 Browse rooms
               </Link>
@@ -70,7 +75,7 @@ function MyBookings() {
         ) : (
           <div className="space-y-10">
             <section aria-labelledby="upcoming-heading">
-              <h2 id="upcoming-heading" className="mb-3 text-sm font-medium text-muted-fg">
+              <h2 id="upcoming-heading" className="micro mb-4">
                 Upcoming
               </h2>
               {upcoming.length === 0 ? (
@@ -91,7 +96,7 @@ function MyBookings() {
 
             {past.length > 0 ? (
               <section aria-labelledby="past-heading">
-                <h2 id="past-heading" className="mb-3 text-sm font-medium text-muted-fg">
+                <h2 id="past-heading" className="micro mb-4">
                   Past
                 </h2>
                 <ul className="space-y-3">
@@ -121,14 +126,16 @@ function BookingRow({ booking, past }: { booking: Booking; past?: boolean }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-medium">{booking.room?.name ?? 'Room'}</h3>
+            <h3 className="font-display text-lg font-bold uppercase tracking-[-0.01em]">
+              {booking.room?.name ?? 'Room'}
+            </h3>
             <StatusBadge booking={booking} />
           </div>
-          <p className="mt-1 text-sm text-muted-fg">
+          <p className="mt-2 text-sm text-muted-fg" data-numeric>
             {formatRange(booking.startTime, booking.endTime)} ·{' '}
             {formatDuration(booking.startTime, booking.endTime)}
           </p>
-          <p className="mt-0.5 text-sm text-muted-fg">
+          <p className="mt-0.5 text-sm text-muted-fg" data-numeric>
             {booking.attendeeCount}{' '}
             {booking.attendeeCount === 1 ? 'attendee' : 'attendees'}
           </p>

@@ -46,8 +46,10 @@ function AdminUtilization() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="font-medium">Utilization</h2>
-          <p className="text-sm text-muted-fg">
+          <h2 className="font-display text-xl font-bold uppercase tracking-[-0.02em]">
+            Utilization
+          </h2>
+          <p className="text-sm text-muted-fg" data-numeric>
             {formatDate(weekStart)} – {formatDate(addDays(weekEnd, -1))}
           </p>
         </div>
@@ -85,20 +87,23 @@ function AdminUtilization() {
               <caption className="sr-only">
                 Booked hours per room for the week of {formatDate(weekStart)}.
               </caption>
-              <thead className="border-b border-border bg-muted/50 text-left">
+              <thead className="border-b border-border/70 bg-muted/40 text-left [&_th]:text-[0.66rem] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.14em] [&_th]:text-muted-fg">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-medium">Room</th>
-                  <th scope="col" className="w-1/3 px-4 py-3 font-medium">Utilization</th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">Booked</th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">Bookings</th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">No-shows</th>
+                  <th scope="col" className="px-4 py-3">Room</th>
+                  <th scope="col" className="w-1/3 px-4 py-3">Utilization</th>
+                  <th scope="col" className="px-4 py-3 text-right">Booked</th>
+                  <th scope="col" className="px-4 py-3 text-right">Bookings</th>
+                  <th scope="col" className="px-4 py-3 text-right">No-shows</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => {
                   const pct = Math.round(row.utilizationRate * 100)
                   return (
-                    <tr key={row.roomId} className="border-b border-border last:border-0">
+                    <tr
+                      key={row.roomId}
+                      className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/30"
+                    >
                       <th scope="row" className="px-4 py-3 text-left font-medium">
                         {row.roomName}
                         <span className="block text-xs font-normal text-muted-fg">
@@ -115,15 +120,15 @@ function AdminUtilization() {
                         */}
                         <div className="flex items-center gap-3">
                           <div
-                            className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
+                            className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted/70"
                             aria-hidden="true"
                           >
                             <div
-                              className="h-full rounded-full bg-primary"
+                              className="h-full rounded-full bg-primary shadow-[0_0_12px_-2px_oklch(var(--primary)/0.8)]"
                               style={{ width: `${Math.min(pct, 100)}%` }}
                             />
                           </div>
-                          <span className="w-10 shrink-0 text-right tabular-nums">
+                          <span className="w-11 shrink-0 text-right font-mono text-xs tabular-nums">
                             {pct}%
                           </span>
                         </div>
@@ -150,7 +155,7 @@ function AdminUtilization() {
         )}
       </div>
 
-      <p className="text-sm text-muted-fg">
+      <p className="max-w-3xl text-sm leading-relaxed text-muted-fg">
         Utilization is booked hours over bookable hours, computed server-side so
         every view reports the same number. Released no-shows count as bookings
         but contribute no booked hours — the room was in fact empty.

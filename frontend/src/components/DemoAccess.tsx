@@ -20,12 +20,16 @@ export function DemoAccess({
     <div className="space-y-3">
       <div className="relative">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-border" />
+          <div className="w-full border-t border-border/70" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-background px-2 text-xs uppercase tracking-wide text-muted-fg">
-            Or explore as
-          </span>
+          {/*
+            The label has to paint over the rule it sits on, so its background
+            must match the page rather than being transparent. Auth screens are
+            rendered directly on the app background, which is why this is
+            bg-background and not bg-card.
+          */}
+          <span className="micro bg-background px-3">Or explore as</span>
         </div>
       </div>
 
@@ -46,7 +50,7 @@ export function DemoAccess({
         </Button>
       </div>
 
-      <p className="text-center text-xs text-muted-fg">
+      <p className="text-center text-xs leading-relaxed text-muted-fg">
         Demo accounts skip the password. They are gated behind an environment
         flag that is off by default.
       </p>

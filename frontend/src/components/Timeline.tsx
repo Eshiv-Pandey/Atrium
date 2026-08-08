@@ -6,6 +6,24 @@ import { cn } from '@/lib/utils'
 export type Selection = { start: Date; end: Date }
 
 /**
+ * The fill for each slot state, shared by the grid and the legend.
+ *
+ * One record rather than two lists because a legend that disagrees with the
+ * thing it explains is worse than no legend, and these drifted the moment the
+ * palette changed.
+ *
+ * `past` carries an explicit fill rather than leaning on opacity: at slot size
+ * a dashed border plus 50% opacity reads clearly, but at the legend's 12px it
+ * is an empty box next to three other empty boxes.
+ */
+const slotFill = {
+  free: 'border-border/60 bg-foreground/[0.04]',
+  selected: 'border-primary bg-primary',
+  busy: 'border-border/60 bg-muted/80',
+  past: 'border-dashed border-border/60 bg-foreground/[0.02]',
+} as const
+
+/**
  * Timeline renders a day as selectable slots.
  *
  * The interaction is deliberately the same one a spreadsheet uses, because
@@ -151,7 +169,7 @@ export function Timeline({
 
       {rows.map((row) => (
         <div key={row.label.toISOString()} className="flex items-center gap-3">
-          <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted-fg">
+          <span className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-muted-fg">
             {formatTime(row.label)}
           </span>
 
@@ -196,15 +214,15 @@ export function Timeline({
                   }}
                   onKeyDown={(e) => onSlotKeyDown(e, index)}
                   className={cn(
-                    'h-9 flex-1 rounded border text-xs transition-colors',
+                    'h-10 flex-1 rounded-md border text-xs font-medium tabular-nums transition-colors',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
                     selected
-                      ? 'border-primary bg-primary text-primary-fg'
+                      ? `${slotFill.selected} text-primary-fg shadow-[0_0_20px_-4px_oklch(var(--primary)/0.6)]`
                       : slot.busy
-                        ? 'cursor-not-allowed border-border bg-muted text-muted-fg'
+                        ? `cursor-not-allowed ${slotFill.busy} text-muted-fg`
                         : slot.past
-                          ? 'cursor-not-allowed border-dashed border-border text-muted-fg opacity-50'
-                          : 'border-border bg-background hover:border-primary/60 hover:bg-primary/5',
+                          ? `cursor-not-allowed ${slotFill.past} text-muted-fg opacity-60`
+                          : `${slotFill.free} hover:border-primary/60 hover:bg-primary/10`,
                   )}
                 >
                   {/*
@@ -235,19 +253,19 @@ export function Timeline({
  */
 export function TimelineLegend() {
   const items = [
-    { label: 'Available', className: 'border-border bg-background' },
-    { label: 'Selected', className: 'border-primary bg-primary' },
-    { label: 'Booked', className: 'border-border bg-muted' },
-    { label: 'Past', className: 'border-dashed border-border opacity-50' },
+    { label: 'Available', className: slotFill.free },
+    { label: 'Selected', className: slotFill.selected },
+    { label: 'Booked', className: slotFill.busy },
+    { label: 'Past', className: slotFill.past },
   ]
 
   return (
-    <ul className="flex flex-wrap gap-4 text-xs text-muted-fg">
+    <ul className="flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-muted-fg">
       {items.map((item) => (
         <li key={item.label} className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
-            className={cn('h-3 w-3 rounded border', item.className)}
+            className={cn('h-3 w-3 rounded-sm border', item.className)}
           />
           {item.label}
         </li>

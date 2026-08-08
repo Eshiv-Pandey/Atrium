@@ -31,7 +31,15 @@ export const Route = createFileRoute('/register')({
 function RegisterPage() {
   const { redirect: redirectTo } = Route.useSearch()
   return (
-    <div className="py-12">
+    <div className="relative isolate py-10 sm:py-16">
+      {/* See /login — the same decorative lettering, kept identical so the two
+          auth screens read as one surface. */}
+      <span
+        aria-hidden="true"
+        className="ghost-type fade-b pointer-events-none absolute -top-2 left-1/2 -z-10 -translate-x-1/2 select-none text-[6rem] sm:text-[9rem]"
+      >
+        Atrium
+      </span>
       <RegisterForm redirectTo={redirectTo} />
     </div>
   )

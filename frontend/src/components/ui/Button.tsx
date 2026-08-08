@@ -4,17 +4,23 @@ import { cn } from '@/lib/utils'
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive'
 type Size = 'sm' | 'md' | 'lg'
 
+/*
+  Only `primary` carries a solid fill. The refs get their energy from one hot
+  element against a lot of restraint, and a page where the secondary action is
+  also a filled button has no primary action — it has two of equal weight.
+*/
 const variants: Record<Variant, string> = {
-  primary: 'bg-primary text-primary-fg hover:opacity-90',
-  secondary: 'border border-border bg-card text-card-fg hover:bg-muted',
+  primary: 'bg-primary text-primary-fg hover:brightness-110',
+  secondary:
+    'border border-border/70 bg-card/60 text-card-fg backdrop-blur-sm hover:border-foreground/30 hover:bg-muted',
   ghost: 'text-muted-fg hover:bg-muted hover:text-foreground',
-  destructive: 'bg-destructive text-destructive-fg hover:opacity-90',
+  destructive: 'bg-destructive text-destructive-fg hover:brightness-110',
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-sm',
-  md: 'h-10 px-4 text-sm',
-  lg: 'h-11 px-6 text-base',
+  sm: 'h-8 px-4 text-sm',
+  md: 'h-10 px-5 text-sm',
+  lg: 'h-12 px-7 text-base',
 }
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -40,7 +46,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       // only signal is a spinner, which is purely visual.
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors',
+        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold transition-[filter,background-color,border-color,color]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         'disabled:pointer-events-none disabled:opacity-50',
         variants[variant],

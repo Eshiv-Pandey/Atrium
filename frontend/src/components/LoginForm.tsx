@@ -42,18 +42,19 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const busy = login.isPending || demoLogin.isPending
 
   return (
-    <div className="mx-auto w-full max-w-sm space-y-6">
-      <header className="space-y-1 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+    <div className="mx-auto w-full max-w-sm space-y-8">
+      <header className="space-y-2 text-center">
+        <p className="micro">Sign in</p>
+        <h1 className="display-xl text-display-sm">Welcome back</h1>
         <p className="text-sm text-muted-fg">
           New here?{' '}
-          <Link to="/register" className="text-primary hover:underline">
+          <Link to="/register" className="font-medium text-primary hover:underline">
             Create an account
           </Link>
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <Field
           label="Email"
           type="email"

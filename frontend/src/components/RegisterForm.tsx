@@ -48,20 +48,19 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
   const busy = register.isPending || demoLogin.isPending
 
   return (
-    <div className="mx-auto w-full max-w-sm space-y-6">
-      <header className="space-y-1 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Create your account
-        </h1>
+    <div className="mx-auto w-full max-w-sm space-y-8">
+      <header className="space-y-2 text-center">
+        <p className="micro">Get started</p>
+        <h1 className="display-xl text-display-sm">Create account</h1>
         <p className="text-sm text-muted-fg">
           Already have one?{' '}
-          <Link to="/login" className="text-primary hover:underline">
+          <Link to="/login" className="font-medium text-primary hover:underline">
             Sign in
           </Link>
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <Field
           label="Name"
           name="name"

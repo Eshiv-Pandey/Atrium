@@ -86,14 +86,17 @@ function RoomDetail() {
         </Link>
       </div>
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {room ? room.name : <Skeleton className="h-8 w-48" />}
+          <p className="micro">Room</p>
+          <h1 className="display-xl mt-2 text-display-sm sm:text-display-md">
+            {room ? room.name : <Skeleton className="h-12 w-64" />}
           </h1>
           {room ? (
             <>
-              <p className="mt-1 text-sm text-muted-fg">Seats {room.capacity}</p>
+              <p className="mt-3 text-sm text-muted-fg" data-numeric>
+                Seats {room.capacity}
+              </p>
               {room.amenities.length > 0 ? (
                 <ul className="mt-3 flex flex-wrap gap-1.5">
                   {room.amenities.map((a) => (
@@ -134,9 +137,11 @@ function RoomDetail() {
         </div>
       </header>
 
-      <Card className="p-5">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="font-medium">Availability</h2>
+      <Card className="p-5 sm:p-6">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <h2 className="font-display text-lg font-bold uppercase tracking-[-0.01em]">
+            Availability
+          </h2>
           <TimelineLegend />
         </div>
 
@@ -166,12 +171,13 @@ function RoomDetail() {
         classic "I selected it, now what" dead end.
       */}
       {selection && room ? (
-        <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-lg">
+        <div className="sticky bottom-4 z-40 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/40 bg-card/90 p-4 shadow-[0_20px_60px_-24px_oklch(0_0_0/0.95)] backdrop-blur-xl">
           <div>
-            <p className="text-sm font-medium">
+            <p className="micro">Selected</p>
+            <p className="mt-1 font-display text-lg font-bold tracking-[-0.01em]" data-numeric>
               {formatRange(selection.start, selection.end)}
             </p>
-            <p className="text-sm text-muted-fg">
+            <p className="text-sm text-muted-fg" data-numeric>
               {formatDuration(selection.start, selection.end)}
             </p>
           </div>

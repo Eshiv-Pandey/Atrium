@@ -27,8 +27,14 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(
     const hintId = `${id}-hint`
 
     return (
-      <div className="space-y-1.5">
-        <label htmlFor={id} className="block text-sm font-medium text-foreground">
+      <div className="space-y-2">
+        {/* Labels take the tracked-out micro treatment from the refs. At this
+            size the extra tracking is what separates a label from body copy
+            without needing a second colour or a heavier weight. */}
+        <label
+          htmlFor={id}
+          className="block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-fg"
+        >
           {label}
         </label>
 
@@ -38,9 +44,9 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : hint ? hintId : undefined}
           className={cn(
-            'block w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground',
-            'placeholder:text-muted-fg',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'block w-full rounded-lg border bg-background/60 px-3.5 py-2.5 text-sm text-foreground',
+            'placeholder:text-muted-fg/70',
+            'transition-colors focus-visible:outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring/60',
             'disabled:cursor-not-allowed disabled:opacity-50',
             error ? 'border-destructive' : 'border-input',
             className,

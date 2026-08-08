@@ -77,25 +77,29 @@ export function Dialog({
         if (e.target === ref.current) onClose()
       }}
       className={cn(
-        'w-[min(32rem,calc(100vw-2rem))] rounded-lg border border-border bg-card p-0 text-card-fg shadow-xl',
-        'backdrop:bg-black/50 backdrop:backdrop-blur-sm',
+        'w-[min(32rem,calc(100vw-2rem))] rounded-2xl border border-border/70 bg-card p-0 text-card-fg',
+        'shadow-[0_40px_100px_-32px_oklch(0_0_0/0.95)]',
+        'backdrop:bg-black/60 backdrop:backdrop-blur-sm',
       )}
     >
-      <div className="border-b border-border px-6 py-4">
-        <h2 id="dialog-title" className="text-lg font-semibold tracking-tight">
+      <div className="border-b border-border/70 px-6 py-5">
+        <h2
+          id="dialog-title"
+          className="font-display text-xl font-bold uppercase tracking-[-0.02em]"
+        >
           {title}
         </h2>
         {description ? (
-          <p id="dialog-description" className="mt-1 text-sm text-muted-fg">
+          <p id="dialog-description" className="mt-2 text-sm leading-relaxed text-muted-fg">
             {description}
           </p>
         ) : null}
       </div>
 
-      <div className="px-6 py-5">{children}</div>
+      <div className="px-6 py-6">{children}</div>
 
       {footer ? (
-        <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+        <div className="flex justify-end gap-2 border-t border-border/70 px-6 py-4">
           {footer}
         </div>
       ) : null}
