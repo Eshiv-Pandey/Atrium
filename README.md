@@ -34,6 +34,23 @@ Seeded accounts:
 
 The compose stack also enables `POST /api/auth/demo-login`, a one-click sign-in for reviewers. It's off by default in the application and turned on only here, because compose is a dev environment. It hands out a valid session with no password, so it must never run in production. When disabled it isn't mounted at all, so there's no flag inside a handler for someone to forget.
 
+## Documentation
+
+This README is the overview. The full documentation lives in the [`docs/`](docs/) folder, with one page per topic:
+
+| Page | What it covers |
+|---|---|
+| [Getting started](docs/getting-started.md) | Prerequisites, bringing the stack up, seeded accounts, and running the backend or frontend on their own. |
+| [Architecture](docs/architecture.md) | The layers on both sides and how a request travels from a click to a row and back. |
+| [Concurrency](docs/concurrency.md) | Why two people cannot book the same room at the same second, and why that guarantee lives in the database. Start here if you read only one. |
+| [Database](docs/database.md) | The schema, the constraints that enforce the rules, the indexes, and how time is represented. |
+| [API reference](docs/api-reference.md) | Every endpoint, who can reach it, and the single error shape the whole API returns. |
+| [Configuration](docs/configuration.md) | Every environment variable and booking policy constant, with the reasoning behind the ones that have no safe default. |
+| [Testing](docs/testing.md) | How the suites are structured, why the integration tests need a real database, and the one test that carries the most weight. |
+| [Deployment](docs/deployment.md) | The Render blueprint, running migrations and seeding against a hosted database, and the free-tier caveats. |
+
+[`docs/README.md`](docs/README.md) is the same index with a suggested reading order.
+
 ## Tech stack
 
 The brief asked for Go, React + Vite + TypeScript, PostgreSQL, and Docker Compose. Everything beyond that earns its place:
@@ -225,6 +242,8 @@ npm test
 npx vitest run src/api/client.test.ts     # one file
 npx vitest run -t 'returns the cached session'
 ```
+
+For the full picture, how the suites are structured, why the integration tests refuse to fake the database, and why `TestCreate_ConcurrentSameSlot` is the load-bearing test, see [docs/testing.md](docs/testing.md).
 
 ## Configuration
 
