@@ -74,7 +74,7 @@ services:
       # swallow it.
       - type: rewrite
         source: /api/*
-        destination: https://atrium-api.onrender.com/api/*
+        destination: https://atrium-api-nl3i.onrender.com/api/*
       # Client-side routing: every other path returns the app shell and lets
       # the TanStack router resolve it. Without this, reloading on /bookings
       # would 404.
