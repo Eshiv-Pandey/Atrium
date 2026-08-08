@@ -91,7 +91,7 @@ function BrowseRooms() {
 
       <section
         aria-labelledby="filters-heading"
-        className="panel relative z-40 p-5 sm:p-6"
+        className="panel p-5 sm:p-6"
       >
         <h2 id="filters-heading" className="sr-only">
           Filter rooms
