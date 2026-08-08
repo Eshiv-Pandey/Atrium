@@ -1,0 +1,90 @@
+# Render blueprint for Atrium.
+#
+# Three pieces, wired so the browser only ever talks to ONE origin:
+#
+#   web (static SPA)  --/api/*-->  api (Go)  -->  atrium-db (Postgres)
+#
+# The single-origin rule is not a preference, it is load-bearing. The session
+# cookie is __Host-prefixed and SameSite=Lax (see backend/internal/http/
+# middleware.go). A split-origin deploy — SPA on one host, API on another —
+# would leave the browser refusing to send that cookie on fetch(), and every
+# authenticated request would 401. So the SPA host owns the public origin and
+# Render rewrites /api/* to the API service server-side; the browser never sees
+# the API's own URL, exactly as the Vite proxy and the nginx config do locally.
+#
+# One-time setup after the first deploy (the API image is distroless and has no
+# migrate tool, so migrations are applied from your machine — see README
+# "Deployment"):
+#   migrate -path backend/migrations -database "$EXTERNAL_DATABASE_URL" up
+#   DATABASE_URL="$EXTERNAL_DATABASE_URL" JWT_SECRET=... go run ./backend/cmd/seed
+
+databases:
+  - name: atrium-db
+    databaseName: atrium
+    user: atrium
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  # ---- Go API ---------------------------------------------------------------
+  # Built from the existing distroless Dockerfile. Not exposed to the browser
+  # directly; the static site below rewrites to it. Kept private-by-convention:
+  # the cookie is Lax, so cross-site calls to this URL cannot carry a session
+  # anyway, but routing all traffic through the SPA origin is what keeps it that
+  # way.
+  - type: web
+    name: atrium-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: atrium-db
+          property: connectionString
+      # Generated once by Render and kept stable across deploys. 32+ bytes, so
+      # config.Load accepts it. You never see or set this by hand.
+      - key: JWT_SECRET
+        generateValue: true
+      # One-click sign-in for the reviewer. This is an unauthenticated route
+      # that hands out a valid session — acceptable only because this is a
+      # throwaway review deployment. Flip to false to require the seeded
+      # admin@atrium.local / member@atrium.local credentials instead.
+      - key: DEMO_LOGIN_ENABLED
+        value: "true"
+      # HTTPS everywhere on Render, so the Secure flag and __Host- prefix apply.
+      - key: SECURE_COOKIES
+        value: "true"
+
+  # ---- Static SPA + same-origin proxy --------------------------------------
+  # Vite build output served as static files. The rewrite makes /api/* resolve
+  # to the API service through Render's edge, so the whole app is one origin to
+  # the browser and the session cookie just works.
+  - type: web
+    name: atrium-web
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    routes:
+      # API first: proxy /api/* to the backend before the SPA catch-all can
+      # swallow it.
+      - type: rewrite
+        source: /api/*
+        destination: https://atrium-api.onrender.com/api/*
+      # Client-side routing: every other path returns the app shell and lets
+      # the TanStack router resolve it. Without this, reloading on /bookings
+      # would 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      # index.html must never be cached; it points at the hashed asset bundle,
+      # and a stale copy pins the browser to a previous deploy. Hashed assets
+      # under /assets are content-addressed and cache-safe by default.
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache

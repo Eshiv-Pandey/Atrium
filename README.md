@@ -245,6 +245,31 @@ Booking policy lives in `config/config.go` as constants, not environment variabl
 
 Only the duration bounds are mirrored in SQL, where the database is the enforcement point. The Go constants exist so the API can return a helpful `422` instead of a raw constraint name.
 
+## Deployment
+
+There's a `render.yaml` blueprint that stands up three things on Render's free tier: the Go API (Docker), the SPA (static site), and Postgres. The one rule the whole topology is built around is same-origin. The session cookie is `__Host-` prefixed and `SameSite=Lax`, so a browser won't send it on a cross-site `fetch`. The static site owns the public URL and rewrites `/api/*` to the API service server-side, so everything is one origin to the browser, exactly like the Vite proxy does locally.
+
+Two things the blueprint can't do for you, both because the API image is distroless and has no shell or migrate tool:
+
+1. **Migrations** run from your machine against the database's external URL:
+
+   ```bash
+   docker run --rm -v "$(pwd)/backend/migrations:/migrations" \
+     migrate/migrate:v4.17.1 \
+     -path=/migrations -database "$EXTERNAL_DATABASE_URL&sslmode=require" up
+   ```
+
+2. **Seeding** is the same seed binary used locally, pointed at the external URL:
+
+   ```bash
+   cd backend
+   DATABASE_URL="$EXTERNAL_DATABASE_URL" JWT_SECRET="$(openssl rand -base64 32)" go run ./cmd/seed
+   ```
+
+   `JWT_SECRET` here is a throwaway. The seed binary calls `config.Load`, which insists on one, but never signs anything with it.
+
+Free-tier caveats worth knowing before you rely on it: the API sleeps after about 15 minutes idle and takes a few seconds to wake on the next request, and a free Postgres instance is removed after about 30 days. Fine for a review deployment, not for anything real.
+
 ## Assumptions
 
 A few things I decided rather than asked:
