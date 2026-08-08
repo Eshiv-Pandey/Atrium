@@ -8,7 +8,7 @@ import { Timeline, TimelineLegend, type Selection } from '@/components/Timeline'
 import { formatAmenity } from '@/components/RoomCard'
 import { Badge, Card, ErrorState, Skeleton } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Field } from '@/components/ui/Field'
+import { DatePicker } from '@/components/ui/DatePicker'
 import { requireAuth } from '@/lib/guards'
 import { buildSlots } from '@/lib/slots'
 import {
@@ -119,12 +119,11 @@ function RoomDetail() {
           >
             ←
           </Button>
-          <Field
+          <DatePicker
             label="Date"
-            type="date"
             value={toDateInputValue(day)}
             min={toDateInputValue(new Date())}
-            onChange={(e) => setDay(e.target.value || undefined)}
+            onChange={(value) => setDay(value || undefined)}
           />
           <Button
             variant="secondary"

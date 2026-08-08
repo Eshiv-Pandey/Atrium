@@ -16,6 +16,7 @@ import { RoomCard, RoomCardSkeleton } from '@/components/RoomCard'
 import { AmenityToggles } from '@/components/AmenityToggles'
 import { EmptyState, ErrorState, SectionHeading } from '@/components/ui/Card'
 import { Field } from '@/components/ui/Field'
+import { DatePicker } from '@/components/ui/DatePicker'
 import { Button } from '@/components/ui/Button'
 
 /**
@@ -90,22 +91,21 @@ function BrowseRooms() {
 
       <section
         aria-labelledby="filters-heading"
-        className="panel p-5 sm:p-6"
+        className="panel relative z-40 p-5 sm:p-6"
       >
         <h2 id="filters-heading" className="sr-only">
           Filter rooms
         </h2>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Field
+          <DatePicker
             label="Date"
-            type="date"
-            value={search.date ?? ''}
+            value={search.date}
             min={toDateInputValue(new Date())}
-            onChange={(e) =>
+            onChange={(value) =>
               setSearch(
-                e.target.value
-                  ? { date: e.target.value, ...defaultTimesFor(e.target.value, search) }
+                value
+                  ? { date: value, ...defaultTimesFor(value, search) }
                   : { date: undefined, from: undefined, to: undefined },
               )
             }
